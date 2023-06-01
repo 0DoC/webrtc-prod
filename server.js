@@ -4,16 +4,14 @@ const app = express();
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 const {version, validate} = require('uuid');
-
 const ACTIONS = require('./src/socket/actions');
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 443;
 
 function getClientRooms() {
   const {rooms} = io.sockets.adapter;
 
   return Array.from(rooms.keys()).filter(roomID => validate(roomID) && version(roomID) === 4);
 }
-
 function shareRoomsInfo() {
   io.emit(ACTIONS.SHARE_ROOMS, {
     rooms: getClientRooms()
@@ -22,7 +20,9 @@ function shareRoomsInfo() {
 
 io.on('connection', socket => {
   shareRoomsInfo();
-
+socket.on("connect_error", (err) => {
+  console.log(err.message); // prints the message associated with the error
+});
   socket.on(ACTIONS.JOIN, config => {
     const {room: roomID} = config;
     const {rooms: joinedRooms} = socket;
